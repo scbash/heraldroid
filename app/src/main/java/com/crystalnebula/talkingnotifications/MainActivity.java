@@ -26,9 +26,6 @@ public class MainActivity extends ActionBarActivity
 
     private Speaker speaker;
 
-    private ToggleButton toggle;
-    private CompoundButton.OnCheckedChangeListener toggleListener;
-
     private TextView smsText;
     private TextView smsSender;
 
@@ -69,10 +66,9 @@ public class MainActivity extends ActionBarActivity
                 Bundle bundle = intent.getExtras();
                 if (bundle != null)
                 {
-                    Object[] pdus = (Object[])bundle.get("pdus");
-                    for (int i = 0; i < pdus.length; i++)
+                    byte[][] pdus = (byte[][])bundle.get("pdus");
+                    for (byte[] pdu: pdus)
                     {
-                        byte[] pdu = (byte[])pdus[i];
                         SmsMessage message = SmsMessage.createFromPdu(pdu);
                         String text = message.getDisplayMessageBody();
                         String sender = getContactName(message.getOriginatingAddress());
@@ -93,14 +89,13 @@ public class MainActivity extends ActionBarActivity
         Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phone));
         String projection[] = new String[] { ContactsContract.Data.DISPLAY_NAME };
         Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+        String result;
         if (cursor.moveToFirst())
-        {
-            return cursor.getString(0);
-        }
+            result = cursor.getString(0);
         else
-        {
-            return "Unknown Number";
-        }
+            result = "Unknown Number";
+        cursor.close();
+        return result;
     }
 
     private void registerSMSReceiver()
@@ -115,12 +110,11 @@ public class MainActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        toggle = (ToggleButton)findViewById(R.id.speechToggle);
+        ToggleButton toggle = (ToggleButton)findViewById(R.id.speechToggle);
         smsText = (TextView)findViewById(R.id.sms_text);
         smsSender = (TextView)findViewById(R.id.sms_sender);
 
-        toggleListener = new CompoundButton.OnCheckedChangeListener()
-        {
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
             {
@@ -135,8 +129,7 @@ public class MainActivity extends ActionBarActivity
                     speaker.allow(false);
                 }
             }
-        };
-        toggle.setOnCheckedChangeListener(toggleListener);
+        });
 
         checkTTS();
         initializeSMSReceiver();
