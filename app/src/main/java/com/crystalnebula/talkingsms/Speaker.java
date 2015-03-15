@@ -1,4 +1,4 @@
-package com.crystalnebula.talkingnotifications;
+package com.crystalnebula.talkingsms;
 
 import android.content.Context;
 import android.media.AudioManager;

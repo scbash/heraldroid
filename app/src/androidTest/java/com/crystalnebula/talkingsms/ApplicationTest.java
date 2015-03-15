@@ -1,4 +1,4 @@
-package com.crystalnebula.talkingnotifications;
+package com.crystalnebula.talkingsms;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
