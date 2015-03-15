@@ -4,6 +4,8 @@ import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -116,8 +118,21 @@ public class TNService extends NotificationListenerService
         Notification n = sbn.getNotification();
         CharSequence text = n.tickerText;
 
-        Log.i(LOG_TAG, "about to speak " + text.toString());
-        Log.i(LOG_TAG, "title is " + n.extras.getString(Notification.EXTRA_TITLE));
+        Log.i(LOG_TAG, "about to speak " + (text != null ? text.toString() : "(null)"));
+        log_helper(n, Notification.EXTRA_TITLE);
+
+        String src_name = "unknown";
+        try
+        {
+            PackageManager pm = getPackageManager();
+            ApplicationInfo src = pm.getApplicationInfo(sbn.getPackageName(),
+                                                        PackageManager.GET_META_DATA);
+            src_name = pm.getApplicationLabel(src).toString();
+        } catch (PackageManager.NameNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        Log.i(LOG_TAG, "notification is from " + src_name + " (" + sbn.getPackageName() + ")");
 
         log_helper(n, Notification.EXTRA_SUMMARY_TEXT);
         log_helper(n, Notification.EXTRA_TEXT);
