@@ -1,8 +1,10 @@
 package com.crystalnebula.talkingnotifications;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -13,7 +15,7 @@ import java.util.Locale;
  *
  * Created by scbash on 2/22/15.
  */
-public class Speaker implements TextToSpeech.OnInitListener
+public class Speaker
 {
     private TextToSpeech tts;
 
@@ -21,9 +23,42 @@ public class Speaker implements TextToSpeech.OnInitListener
 
     private boolean allowed = false;
 
-    public Speaker(Context context)
+    public Speaker(final Context context)
     {
-        tts = new TextToSpeech(context, this);
+        // Based on http://stackoverflow.com/a/8184067
+        tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status)
+            {
+                if (status == TextToSpeech.SUCCESS)
+                {
+                    // Change this to match your locale
+                    Locale curLocale = Locale.getDefault();
+                    switch (tts.isLanguageAvailable(curLocale))
+                    {
+                        case TextToSpeech.LANG_AVAILABLE:
+                        case TextToSpeech.LANG_COUNTRY_AVAILABLE:
+                        case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
+                            tts.setLanguage(curLocale);
+                            ready = true;
+                            break;
+
+                        case TextToSpeech.LANG_MISSING_DATA:
+                            Intent installIntent = new Intent();
+                            installIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                            context.startActivity(installIntent);
+                            break;
+
+                        case TextToSpeech.LANG_NOT_SUPPORTED:
+                            break;
+                    }
+                }
+                else
+                {
+                    ready = false;
+                }
+            }
+        });
     }
 
     @SuppressWarnings("unused")  // it's just good style to have getters for private members
@@ -37,19 +72,9 @@ public class Speaker implements TextToSpeech.OnInitListener
         this.allowed = allowed;
     }
 
-    @Override
-    public void onInit(int status)
+    public boolean isReady()
     {
-        if (status == TextToSpeech.SUCCESS)
-        {
-           // Change this to match your locale
-           tts.setLanguage(Locale.US);
-           ready = true;
-        }
-        else
-        {
-            ready = false;
-        }
+        return ready;
     }
 
     /* This form of speak is deprecated in API 21, but it's replacement is also introduced in API
@@ -59,12 +84,13 @@ public class Speaker implements TextToSpeech.OnInitListener
     @SuppressWarnings("deprecation")
     public void speak(String text)
     {
+        Log.d("speaker", "ready is " + ready + ", allow is " + allowed);
         // Speak only if TTS is ready and the user has allowed speech
         if (ready && allowed)
         {
             HashMap<String, String> hash = new HashMap<>();
             hash.put(TextToSpeech.Engine.KEY_PARAM_STREAM,
-                     String.valueOf(AudioManager.STREAM_NOTIFICATION));
+                     String.valueOf(AudioManager.STREAM_ALARM));
             tts.speak(text, TextToSpeech.QUEUE_ADD, hash);
         }
     }

@@ -1,108 +1,18 @@
 package com.crystalnebula.talkingnotifications;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.database.Cursor;
-import android.net.Uri;
-import android.provider.ContactsContract;
-import android.speech.tts.TextToSpeech;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.telephony.SmsMessage;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.CompoundButton;
-import android.widget.TextView;
-import android.widget.ToggleButton;
+import android.view.View;
+import android.widget.Button;
 
 
-public class MainActivity extends ActionBarActivity
+public class MainActivity extends ActionBarActivity implements View.OnClickListener
 {
-    private final int CHECK_CODE = 0x1;
-    private final int LONG_DURATION = 5000;
-    private final int SHORT_DURATION = 1200;
-
-    private Speaker speaker;
-
-    private TextView smsText;
-    private TextView smsSender;
-
-    private BroadcastReceiver smsReceiver;
-
-    private void checkTTS()
-    {
-        Intent check = new Intent();
-        check.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-        startActivityForResult(check, CHECK_CODE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if (requestCode == CHECK_CODE)
-        {
-            if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS)
-            {
-                speaker = new Speaker(this);
-            }
-            else
-            {
-                Intent install = new Intent();
-                install.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
-                startActivity(install);
-            }
-        }
-    }
-
-    private void initializeSMSReceiver()
-    {
-        smsReceiver = new BroadcastReceiver()
-        {
-            @Override
-            public void onReceive(Context context, Intent intent)
-            {
-                Bundle bundle = intent.getExtras();
-                if (bundle != null)
-                {
-                    byte[][] pdus = (byte[][])bundle.get("pdus");
-                    for (byte[] pdu: pdus)
-                    {
-                        SmsMessage message = SmsMessage.createFromPdu(pdu);
-                        String text = message.getDisplayMessageBody();
-                        String sender = getContactName(message.getOriginatingAddress());
-                        speaker.pause(LONG_DURATION);
-                        speaker.speak("You have a new message from " + sender + "!");
-                        speaker.pause(SHORT_DURATION);
-                        speaker.speak(text);
-                        smsSender.setText("Message from " + sender);
-                        smsText.setText(text);
-                    }
-                }
-            }
-        };
-    }
-
-    private String getContactName(String phone)
-    {
-        Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phone));
-        String projection[] = new String[] { ContactsContract.Data.DISPLAY_NAME };
-        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-        String result;
-        if (cursor.moveToFirst())
-            result = cursor.getString(0);
-        else
-            result = "Unknown Number";
-        cursor.close();
-        return result;
-    }
-
-    private void registerSMSReceiver()
-    {
-        IntentFilter intentFilter = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
-        registerReceiver(smsReceiver, intentFilter);
-    }
+    private static final String LOG_TAG = "SCBMainAct";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -110,38 +20,39 @@ public class MainActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ToggleButton toggle = (ToggleButton)findViewById(R.id.speechToggle);
-        smsText = (TextView)findViewById(R.id.sms_text);
-        smsSender = (TextView)findViewById(R.id.sms_sender);
+        Button startButton = (Button)findViewById(R.id.button1);
+        Button stopButton = (Button)findViewById(R.id.button2);
 
-        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-            {
-                if (isChecked)
-                {
-                    speaker.allow(true);
-                    speaker.speak(getString(R.string.start_speaking));
-                }
-                else
-                {
-                    speaker.speak(getString(R.string.stop_speaking));
-                    speaker.allow(false);
-                }
-            }
-        });
+        startButton.setOnClickListener(this);
+        stopButton.setOnClickListener(this);
+    }
 
-        checkTTS();
-        initializeSMSReceiver();
-        registerSMSReceiver();
+    @Override
+    public void onClick(View v)
+    {
+        switch (v.getId())
+        {
+            case R.id.button1:
+                Log.i(LOG_TAG, "Start button pressed");
+                Intent startIntent = new Intent(MainActivity.this, TNService.class);
+                startIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
+                startService(startIntent);
+                break;
+            case R.id.button2:
+                Log.i(LOG_TAG, "Stop button pressed");
+                Intent stopIntent = new Intent(MainActivity.this, TNService.class);
+                stopIntent.setAction(Constants.ACTION.STOPFOREGROUND_ACTION);
+                startService(stopIntent);
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
     protected void onDestroy()
     {
         super.onDestroy();
-        unregisterReceiver(smsReceiver);
-        speaker.destroy();
     }
 
     // *** The following methods were created by Android Studio and not discussed in the tutorial
