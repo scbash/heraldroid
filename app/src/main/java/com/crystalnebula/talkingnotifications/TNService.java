@@ -8,11 +8,17 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Binder;
 import android.os.Build;
+import android.os.IBinder;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * foo bar baz make this yellow go away
@@ -102,6 +108,17 @@ public class TNService extends NotificationListenerService
         return START_STICKY;
     }
 
+    @Override
+    public IBinder onBind(Intent intent)
+    {
+        if (intent.getAction().equals(Constants.ACTION.REQUEST_LOCAL_BIND))
+        {
+            return new LocalBinder();
+        }
+
+        return super.onBind(intent);
+    }
+
     @TargetApi(19)  // don't complain about the use of Notification.extras
     private void log_helper(Notification n, String key)
     {
@@ -144,7 +161,8 @@ public class TNService extends NotificationListenerService
             speaker.pause(LONG_DURATION);
             speaker.speak("You have a new notification");
             speaker.pause(SHORT_DURATION);
-            speaker.speak(text.toString());
+            if (text != null)
+                speaker.speak(text.toString());
         }
     }
 
@@ -199,5 +217,74 @@ public class TNService extends NotificationListenerService
         Log.i(LOG_TAG, "In onDestroy");
         super.onDestroy();
         speaker.destroy();
+    }
+
+    public JSONArray getNotificationList()
+    {
+        // This translates notifications to JSON objects for historical reasons. Changing it to use
+        // traditional HashMaps doesn't significantly improve the code, so for now it's left as is...
+        PackageManager pm = getPackageManager();
+        JSONArray json = new JSONArray();
+        for (StatusBarNotification sbn : getActiveNotifications())
+        {
+            JSONObject njson = new JSONObject();
+            String src_name = "unknown";
+            try
+            {
+                ApplicationInfo src = pm.getApplicationInfo(sbn.getPackageName(),
+                                                            PackageManager.GET_META_DATA);
+                src_name = pm.getApplicationLabel(src).toString();
+            }
+            catch (PackageManager.NameNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+
+            try
+            {
+                njson.put(Constants.JSON.PACKAGE, sbn.getPackageName());
+                njson.put(Constants.JSON.APPNAME, src_name);
+
+                Notification n = sbn.getNotification();
+                njson.put(Constants.JSON.TICKERTEXT, n.tickerText);
+                njson.put(Constants.JSON.NUMBER, n.number);
+                njson.put(Constants.JSON.PRIORITY, n.priority);
+                njson.put(Constants.JSON.FLAGS, n.flags);
+
+                if (Build.VERSION.SDK_INT >= 19)
+                {
+                    for (String key : n.extras.keySet())
+                    {
+                        // JSONObject.wrap doesn't handle CharSequences well, so convert to strings first
+                        Object o = n.extras.get(key);
+                        if (o instanceof CharSequence)
+                            o = o.toString();
+                        njson.put(key, JSONObject.wrap(o));
+                    }
+                }
+
+                if (Build.VERSION.SDK_INT >= 21)
+                {
+                    njson.put(Constants.JSON.CATEGORY, n.category);
+                    njson.put(Constants.JSON.VISIBILITY, n.visibility);
+                }
+
+                json.put(njson);
+            }
+            catch (JSONException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return json;
+    }
+
+    public class LocalBinder extends Binder
+    {
+        public TNService getService()
+        {
+            return TNService.this;
+        }
     }
 }

@@ -55,8 +55,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         super.onDestroy();
     }
 
-    // *** The following methods were created by Android Studio and not discussed in the tutorial
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
@@ -65,20 +63,15 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item)
+    public void launchSettings(MenuItem item)
     {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        // Original implementation did nothing, so do nothing here as well...
+    }
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings)
-        {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+    public void launchExamine(MenuItem item)
+    {
+        Intent intent = new Intent(this, ExamineNotificationActivity.class);
+        intent.setAction(Constants.ACTION.STARTEXAMINE_ACTION);
+        startActivity(intent);
     }
 }

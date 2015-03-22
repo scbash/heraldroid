@@ -11,4 +11,5 @@
 
     <string name="start_speaking">Okay! I will read your messages out loud for you now.</string>
     <string name="stop_speaking">Okay! I will stay silent now.</string>
+    <string name="title_activity_examine_notification">Examine Notifications</string>
 </resources>

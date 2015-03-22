@@ -15,10 +15,25 @@ public class Constants
 
         public static String STARTFOREGROUND_ACTION = "com.crystalnebula.talkingnotifications.action.startforeground";
         public static String STOPFOREGROUND_ACTION = "com.crystalnebula.talkingnotifications.action.stopforeground";
+
+        public static String STARTEXAMINE_ACTION = "com.crystalnebula.talkingnotifications.action.startexamine";
+        public static String REQUEST_LOCAL_BIND = "com.crystalnebula.talkingnotifciations.action.requestlocalbind";  // for activities to get notification list
     }
 
     public interface NOTIFICATION_ID
     {
         public static int FOREGROUND_SERVICE = 101;
+    }
+
+    public interface JSON
+    {
+        public static String APPNAME = "appname";
+        public static String PACKAGE = "package";
+        public static String TICKERTEXT = "tickertext";
+        public static String CATEGORY = "category";
+        public static String NUMBER = "number";
+        public static String PRIORITY = "priority";
+        public static String VISIBILITY = "visibility";
+        public static String FLAGS = "flags";
     }
 }

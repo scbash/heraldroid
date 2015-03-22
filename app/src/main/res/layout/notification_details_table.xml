@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:stretchColumns="*">
+
+    <!-- Using a normal layout here rather than a TableRow makes the layout span all columns -->
+    <LinearLayout
+        android:id="@+id/notification_details_header"
+        android:orientation="vertical"
+        android:background="@color/background_material_dark">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMediumInverse"
+            android:text="Application Name"
+            android:id="@+id/details_app_name"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmallInverse"
+            android:text="(package name)"
+            android:id="@+id/details_package_name"/>
+
+    </LinearLayout>
+
+</TableLayout>
